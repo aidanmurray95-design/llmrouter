@@ -6,7 +6,7 @@ export class ClaudeClient implements LLMClient {
   private model: string;
   private baseUrl = 'https://api.anthropic.com/v1';
 
-  constructor(apiKey: string, model: string = 'claude-3-5-sonnet-20241022') {
+  constructor(apiKey: string, model: string = 'claude-3-5-sonnet-20240620') {
     this.apiKey = apiKey;
     this.model = model;
   }

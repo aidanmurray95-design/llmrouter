@@ -123,7 +123,15 @@ export class ConfigUI {
 
   private loadConfig(): APIConfig {
     const saved = storage.get<APIConfig>(CONFIG_KEY);
-    return saved || this.getDefaultConfig();
+    const defaultConfig = this.getDefaultConfig();
+
+    // Merge saved config with defaults and environment variables
+    return {
+      openaiApiKey: saved?.openaiApiKey || defaultConfig.openaiApiKey,
+      claudeApiKey: saved?.claudeApiKey || defaultConfig.claudeApiKey,
+      defaultProvider: saved?.defaultProvider || defaultConfig.defaultProvider,
+      openaiModel: saved?.openaiModel || defaultConfig.openaiModel,
+    };
   }
 
   private saveConfig(config: APIConfig): void {
@@ -131,9 +139,17 @@ export class ConfigUI {
   }
 
   private getDefaultConfig(): APIConfig {
+    // Read from environment variables (Vite exposes VITE_* variables)
+    const envOpenAIKey = import.meta.env.VITE_OPENAI_API_KEY;
+    const envClaudeKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    const envDefaultProvider = import.meta.env.VITE_DEFAULT_PROVIDER;
+    const envOpenAIModel = import.meta.env.VITE_OPENAI_MODEL;
+
     return {
-      defaultProvider: 'claude',
-      openaiModel: 'gpt-4',
+      openaiApiKey: envOpenAIKey || undefined,
+      claudeApiKey: envClaudeKey || undefined,
+      defaultProvider: (envDefaultProvider as 'claude' | 'openai') || 'claude',
+      openaiModel: envOpenAIModel || 'gpt-4',
     };
   }
 

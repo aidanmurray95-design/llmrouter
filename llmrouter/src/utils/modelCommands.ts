@@ -16,13 +16,23 @@ const MODEL_COMMANDS: Record<string, ModelOverride> = {
   // Claude models
   '@claude': {
     provider: 'claude',
-    model: 'claude-3-5-sonnet-20241022',
+    model: 'claude-3-5-sonnet-20240620',
     displayName: 'Claude 3.5 Sonnet'
   },
   '@sonnet': {
     provider: 'claude',
-    model: 'claude-3-5-sonnet-20241022',
+    model: 'claude-3-5-sonnet-20240620',
     displayName: 'Claude 3.5 Sonnet'
+  },
+  '@opus': {
+    provider: 'claude',
+    model: 'claude-3-opus-20240229',
+    displayName: 'Claude 3 Opus'
+  },
+  '@haiku': {
+    provider: 'claude',
+    model: 'claude-3-haiku-20240307',
+    displayName: 'Claude 3 Haiku'
   },
 
   // OpenAI models
