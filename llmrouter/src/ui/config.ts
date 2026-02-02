@@ -183,18 +183,35 @@ export class ConfigUI {
         provider: 'Claude 3.5 Sonnet',
       };
     } else {
-      // Fallback to whichever key is available
-      if (this.config.openaiApiKey) {
-        return {
-          client: new OpenAIClient(this.config.openaiApiKey, this.config.openaiModel),
-          provider: 'OpenAI (' + this.config.openaiModel + ')',
-        };
-      } else if (this.config.claudeApiKey) {
+      // Fallback to whichever key is available (prefer Claude)
+      if (this.config.claudeApiKey) {
         return {
           client: new ClaudeClient(this.config.claudeApiKey),
           provider: 'Claude 3.5 Sonnet',
         };
+      } else if (this.config.openaiApiKey) {
+        return {
+          client: new OpenAIClient(this.config.openaiApiKey, this.config.openaiModel),
+          provider: 'OpenAI (' + this.config.openaiModel + ')',
+        };
       }
+    }
+
+    return null;
+  }
+
+  createSpecificLLMClient(provider: 'claude' | 'openai', model?: string) {
+    if (provider === 'claude' && this.config.claudeApiKey) {
+      return {
+        client: new ClaudeClient(this.config.claudeApiKey, model),
+        provider: model ? `Claude (${model})` : 'Claude 3.5 Sonnet',
+      };
+    } else if (provider === 'openai' && this.config.openaiApiKey) {
+      const modelToUse = model || this.config.openaiModel;
+      return {
+        client: new OpenAIClient(this.config.openaiApiKey, modelToUse),
+        provider: `OpenAI (${modelToUse})`,
+      };
     }
 
     return null;

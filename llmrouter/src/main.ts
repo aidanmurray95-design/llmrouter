@@ -12,7 +12,7 @@ class App {
   constructor() {
     // Initialize UI components
     this.configUI = new ConfigUI((config) => this.handleConfigChange(config));
-    this.chatUI = new ChatUI();
+    this.chatUI = new ChatUI(this.configUI);
     this.flowsUI = new FlowsUI();
 
     // Setup tab navigation

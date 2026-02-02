@@ -10,6 +10,8 @@ import {
 } from '../utils/fileUpload';
 import { parsePDF } from '../parsers/pdfParser';
 import { parseExcel } from '../parsers/excelParser';
+import { parseModelCommand, getModelDisplayName } from '../utils/modelCommands';
+import type { ConfigUI } from './config';
 
 interface ChatMessage extends Message {
   id: string;
@@ -29,8 +31,10 @@ export class ChatUI {
   private provider: string = 'Unknown';
   private fileAttachments: FileAttachment[] = [];
   private isProcessingFiles: boolean = false;
+  private configUI: ConfigUI;
 
-  constructor() {
+  constructor(configUI: ConfigUI) {
+    this.configUI = configUI;
     this.messagesContainer = document.getElementById('chat-messages')!;
     this.chatForm = document.getElementById('chat-form') as HTMLFormElement;
     this.chatInput = document.getElementById('chat-input') as HTMLTextAreaElement;
@@ -227,12 +231,35 @@ export class ChatUI {
   }
 
   private async handleSendMessage(): Promise<void> {
-    const content = this.chatInput.value.trim();
+    const rawContent = this.chatInput.value.trim();
 
     // Require either content or file attachments
-    if (!content && this.fileAttachments.length === 0) return;
+    if (!rawContent && this.fileAttachments.length === 0) return;
 
-    if (!this.llmClient) {
+    // Parse for @ command
+    const parsed = parseModelCommand(rawContent);
+    const content = parsed.content;
+
+    // Determine which LLM client to use
+    let llmClient = this.llmClient;
+    let providerName = this.provider;
+
+    if (parsed.modelOverride) {
+      const overrideClient = this.configUI.createSpecificLLMClient(
+        parsed.modelOverride.provider,
+        parsed.modelOverride.model
+      );
+
+      if (overrideClient) {
+        llmClient = overrideClient.client;
+        providerName = getModelDisplayName(parsed.modelOverride);
+      } else {
+        this.showError(`${parsed.modelOverride.provider} not configured. Please add API key in settings.`);
+        return;
+      }
+    }
+
+    if (!llmClient) {
       this.showError('Please configure your API keys in settings first.');
       return;
     }
@@ -285,13 +312,13 @@ export class ChatUI {
         role: 'assistant',
         content: '',
         timestamp: Date.now(),
-        provider: this.provider,
+        provider: providerName,
       };
 
       let fullContent = '';
 
-      // Send to LLM with streaming
-      await this.llmClient.chat(
+      // Send to LLM with streaming (use override client if available)
+      await llmClient.chat(
         {
           messages: apiMessages,
           stream: true,
