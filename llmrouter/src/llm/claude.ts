@@ -4,7 +4,7 @@ import { LLMError } from './types';
 export class ClaudeClient implements LLMClient {
   private apiKey: string;
   private model: string;
-  private baseUrl = 'https://api.anthropic.com/v1';
+  private baseUrl = '/api/chat';
 
   constructor(apiKey: string, model: string = 'claude-sonnet-4-20250514') {
     this.apiKey = apiKey;
@@ -18,29 +18,20 @@ export class ClaudeClient implements LLMClient {
 
     const { messages, temperature = 0.7, maxTokens = 2000, stream = !!onStream } = request;
 
-    // Convert messages to Claude format (extract system messages)
-    const systemMessages = messages.filter(m => m.role === 'system');
-    const conversationMessages = messages.filter(m => m.role !== 'system');
-
     const body = {
+      provider: 'claude' as const,
       model: this.model,
-      messages: conversationMessages.map(m => ({
-        role: m.role === 'user' ? 'user' : 'assistant',
-        content: m.content,
-      })),
-      system: systemMessages.length > 0 ? systemMessages[0].content : undefined,
+      messages: messages,
       temperature,
-      max_tokens: maxTokens,
+      maxTokens,
       stream,
     };
 
     try {
-      const response = await fetch(`${this.baseUrl}/messages`, {
+      const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
-          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify(body),
       });

@@ -4,7 +4,7 @@ import { LLMError } from './types';
 export class OpenAIClient implements LLMClient {
   private apiKey: string;
   private model: string;
-  private baseUrl = 'https://api.openai.com/v1';
+  private baseUrl = '/api/chat';
 
   constructor(apiKey: string, model: string = 'gpt-4') {
     this.apiKey = apiKey;
@@ -19,19 +19,19 @@ export class OpenAIClient implements LLMClient {
     const { messages, temperature = 0.7, maxTokens = 2000, stream = !!onStream } = request;
 
     const body = {
+      provider: 'openai' as const,
       model: this.model,
       messages: messages,
       temperature,
-      max_tokens: maxTokens,
+      maxTokens,
       stream,
     };
 
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(body),
       });
