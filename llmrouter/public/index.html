@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-LLM Chatbot Flows</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>🤖 Multi-LLM Chatbot Flows</h1>
+      <button id="settings-btn" class="btn-icon" aria-label="Settings">⚙️</button>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h2>Saved Flows</h2>
+          <button id="new-flow-btn" class="btn-primary">+ New Flow</button>
+        </div>
+        <div id="flows-list" class="flows-list">
+          <!-- Flows will be dynamically added here -->
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Tab Navigation -->
+        <nav class="tabs">
+          <button class="tab-btn active" data-tab="chat">💬 Chat</button>
+          <button class="tab-btn" data-tab="flows">🔗 Flows Builder</button>
+        </nav>
+
+        <!-- Chat Tab -->
+        <div id="chat-tab" class="tab-content active">
+          <div class="chat-container">
+            <div id="chat-messages" class="chat-messages">
+              <div class="welcome-message">
+                <h2>Welcome to Multi-LLM Chatbot! 👋</h2>
+                <p>Start chatting or create a flow to chain multiple prompts together.</p>
+                <div class="quick-actions">
+                  <button class="btn-secondary" id="try-example-flow">Try Example Flow</button>
+                  <button class="btn-secondary" id="configure-apis">Configure APIs</button>
+                </div>
+              </div>
+            </div>
+            <form id="chat-form" class="chat-input-container">
+              <textarea
+                id="chat-input"
+                class="chat-input"
+                placeholder="Type your message..."
+                rows="1"
+              ></textarea>
+              <button type="submit" class="btn-send" aria-label="Send">
+                <span class="send-icon">➤</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Flows Builder Tab -->
+        <div id="flows-tab" class="tab-content">
+          <div class="flows-builder">
+            <div class="flows-header">
+              <h2>Create a Flow</h2>
+              <p class="flows-description">
+                Describe your workflow using natural language. Use keywords like "first", "then", "next", "finally" to chain prompts.
+              </p>
+            </div>
+
+            <div class="flow-editor">
+              <label for="flow-name" class="form-label">Flow Name</label>
+              <input
+                type="text"
+                id="flow-name"
+                class="form-input"
+                placeholder="e.g., Content Analysis Pipeline"
+              />
+
+              <label for="flow-description" class="form-label">Flow Steps</label>
+              <textarea
+                id="flow-description"
+                class="form-textarea"
+                placeholder="Example: First summarize this article, then identify 3 main themes, then suggest related topics"
+                rows="6"
+              ></textarea>
+
+              <label for="flow-input" class="form-label">Initial Input</label>
+              <textarea
+                id="flow-input"
+                class="form-textarea"
+                placeholder="Enter the text or prompt that will start your flow..."
+                rows="4"
+              ></textarea>
+
+              <div class="flow-controls">
+                <button id="save-flow-btn" class="btn-secondary">💾 Save Flow</button>
+                <button id="execute-flow-btn" class="btn-primary">▶️ Execute Flow</button>
+              </div>
+            </div>
+
+            <div id="flow-progress" class="flow-progress hidden">
+              <h3>Flow Execution Progress</h3>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+              <div id="flow-steps-status" class="flow-steps-status"></div>
+            </div>
+
+            <div id="flow-results" class="flow-results hidden">
+              <h3>Flow Results</h3>
+              <div id="flow-output" class="flow-output"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>⚙️ Settings</h2>
+          <button class="modal-close" id="close-settings">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-section">
+            <h3>API Configuration</h3>
+            <p class="warning-text">
+              ⚠️ API keys are stored locally in your browser. Never share your keys or commit them to version control.
+            </p>
+
+            <div class="form-group">
+              <label for="openai-key" class="form-label">OpenAI API Key</label>
+              <input
+                type="password"
+                id="openai-key"
+                class="form-input"
+                placeholder="sk-..."
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="claude-key" class="form-label">Anthropic API Key</label>
+              <input
+                type="password"
+                id="claude-key"
+                class="form-input"
+                placeholder="sk-ant-..."
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="default-provider" class="form-label">Default Provider</label>
+              <select id="default-provider" class="form-select">
+                <option value="openai">OpenAI (GPT-4)</option>
+                <option value="claude">Anthropic (Claude 3.5 Sonnet)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="openai-model" class="form-label">OpenAI Model</label>
+              <select id="openai-model" class="form-select">
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-actions">
+            <button id="save-settings-btn" class="btn-primary">Save Settings</button>
+            <button id="clear-data-btn" class="btn-danger">Clear All Data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
