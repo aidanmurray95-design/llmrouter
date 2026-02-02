@@ -1,5 +1,15 @@
 import type { LLMClient, Message } from '../llm/types';
 import { renderMarkdown } from '../utils/markdown';
+import type { FileAttachment } from '../types/fileTypes';
+import {
+  validateFiles,
+  readFileAsArrayBuffer,
+  createFileAttachment,
+  formatFileSize,
+  FileUploadError
+} from '../utils/fileUpload';
+import { parsePDF } from '../parsers/pdfParser';
+import { parseExcel } from '../parsers/excelParser';
 
 interface ChatMessage extends Message {
   id: string;
@@ -11,9 +21,14 @@ export class ChatUI {
   private messagesContainer: HTMLElement;
   private chatForm: HTMLFormElement;
   private chatInput: HTMLTextAreaElement;
+  private fileAttachButton: HTMLButtonElement | null = null;
+  private fileInput: HTMLInputElement | null = null;
+  private filePreview: HTMLElement | null = null;
   private messages: ChatMessage[] = [];
   private llmClient: LLMClient | null = null;
   private provider: string = 'Unknown';
+  private fileAttachments: FileAttachment[] = [];
+  private isProcessingFiles: boolean = false;
 
   constructor() {
     this.messagesContainer = document.getElementById('chat-messages')!;
@@ -21,6 +36,7 @@ export class ChatUI {
     this.chatInput = document.getElementById('chat-input') as HTMLTextAreaElement;
 
     this.setupEventListeners();
+    this.setupFileUpload();
   }
 
   private setupEventListeners(): void {
@@ -45,25 +61,211 @@ export class ChatUI {
     });
   }
 
+  private setupFileUpload(): void {
+    this.fileAttachButton = document.getElementById('chat-file-btn') as HTMLButtonElement;
+    this.fileInput = document.getElementById('chat-file-input') as HTMLInputElement;
+    this.filePreview = document.getElementById('chat-file-preview');
+
+    if (this.fileAttachButton && this.fileInput) {
+      this.fileAttachButton.addEventListener('click', () => {
+        this.fileInput?.click();
+      });
+
+      this.fileInput.addEventListener('change', (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (files && files.length > 0) {
+          this.handleFileSelect(Array.from(files));
+        }
+      });
+    }
+  }
+
+  private async handleFileSelect(files: File[]): Promise<void> {
+    // Validate files
+    const validation = validateFiles(files, this.fileAttachments);
+    if (!validation.valid) {
+      this.showError(validation.error || 'Invalid files');
+      return;
+    }
+
+    // Show loading state
+    this.isProcessingFiles = true;
+    this.updateFileAttachButtonState();
+
+    try {
+      // Process each file
+      for (const file of files) {
+        await this.processFile(file);
+      }
+
+      // Render file preview
+      this.renderFilePreview();
+    } catch (error) {
+      this.showError(
+        error instanceof FileUploadError
+          ? error.message
+          : 'Failed to process file. Please try again.'
+      );
+    } finally {
+      this.isProcessingFiles = false;
+      this.updateFileAttachButtonState();
+
+      // Clear file input
+      if (this.fileInput) {
+        this.fileInput.value = '';
+      }
+    }
+  }
+
+  private async processFile(file: File): Promise<void> {
+    try {
+      // Read file
+      const arrayBuffer = await readFileAsArrayBuffer(file);
+
+      // Parse based on file type
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      let parseResult;
+
+      if (extension === 'pdf') {
+        parseResult = await parsePDF(arrayBuffer, file.name);
+      } else {
+        parseResult = await parseExcel(arrayBuffer, file.name);
+      }
+
+      // Check for parsing errors
+      if (parseResult.error) {
+        throw new FileUploadError(parseResult.error);
+      }
+
+      if (!parseResult.content) {
+        throw new FileUploadError(`No content could be extracted from ${file.name}`);
+      }
+
+      // Create attachment
+      const attachment = createFileAttachment(file, parseResult.content, parseResult.metadata);
+      this.fileAttachments.push(attachment);
+    } catch (error) {
+      console.error('File processing error:', error);
+      throw error;
+    }
+  }
+
+  private renderFilePreview(): void {
+    if (!this.filePreview) return;
+
+    if (this.fileAttachments.length === 0) {
+      this.filePreview.classList.add('hidden');
+      this.filePreview.innerHTML = '';
+      return;
+    }
+
+    this.filePreview.classList.remove('hidden');
+    this.filePreview.innerHTML = '';
+
+    this.fileAttachments.forEach((attachment, index) => {
+      const chip = document.createElement('div');
+      chip.className = 'file-chip';
+
+      const icon = document.createElement('span');
+      icon.className = 'file-icon';
+      icon.textContent = attachment.type === 'pdf' ? '📄' : '📊';
+
+      const info = document.createElement('div');
+      info.className = 'file-info';
+
+      const name = document.createElement('div');
+      name.className = 'file-name';
+      name.textContent = attachment.name;
+
+      const meta = document.createElement('div');
+      meta.className = 'file-meta';
+      const sizeText = formatFileSize(attachment.size);
+      const metaText = attachment.metadata?.pageCount
+        ? `${sizeText} • ${attachment.metadata.pageCount} pages`
+        : attachment.metadata?.sheetNames
+        ? `${sizeText} • ${attachment.metadata.sheetNames.length} sheets`
+        : sizeText;
+      meta.textContent = metaText;
+
+      info.appendChild(name);
+      info.appendChild(meta);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'file-remove';
+      removeBtn.textContent = '×';
+      removeBtn.title = 'Remove file';
+      removeBtn.addEventListener('click', () => this.removeFileAttachment(index));
+
+      chip.appendChild(icon);
+      chip.appendChild(info);
+      chip.appendChild(removeBtn);
+
+      this.filePreview!.appendChild(chip);
+    });
+  }
+
+  private removeFileAttachment(index: number): void {
+    this.fileAttachments.splice(index, 1);
+    this.renderFilePreview();
+  }
+
+  private clearFileAttachments(): void {
+    this.fileAttachments = [];
+    this.renderFilePreview();
+  }
+
+  private updateFileAttachButtonState(): void {
+    if (this.fileAttachButton) {
+      if (this.isProcessingFiles) {
+        this.fileAttachButton.disabled = true;
+        this.fileAttachButton.textContent = '⏳';
+      } else {
+        this.fileAttachButton.disabled = false;
+        this.fileAttachButton.textContent = '📎';
+      }
+    }
+  }
+
   private async handleSendMessage(): Promise<void> {
     const content = this.chatInput.value.trim();
-    if (!content) return;
+
+    // Require either content or file attachments
+    if (!content && this.fileAttachments.length === 0) return;
 
     if (!this.llmClient) {
       this.showError('Please configure your API keys in settings first.');
       return;
     }
 
-    // Clear input
+    // Build final message content
+    let finalContent = content;
+
+    // Append file content if any
+    if (this.fileAttachments.length > 0) {
+      const fileContents = this.fileAttachments
+        .map(attachment => attachment.extractedContent)
+        .join('\n\n');
+
+      if (content) {
+        finalContent = `${content}\n\n${fileContents}`;
+      } else {
+        finalContent = fileContents;
+      }
+    }
+
+    // Clear input and files
     this.chatInput.value = '';
     this.chatInput.style.height = 'auto';
+    const attachments = [...this.fileAttachments];
+    this.clearFileAttachments();
 
     // Add user message
     const userMessage: ChatMessage = {
       id: this.generateId(),
       role: 'user',
-      content,
+      content: finalContent,
       timestamp: Date.now(),
+      attachments: attachments.length > 0 ? attachments : undefined,
     };
     this.addMessage(userMessage);
 
@@ -154,6 +356,22 @@ export class ChatUI {
       providerBadge.className = 'message-provider';
       providerBadge.textContent = message.provider;
       header.appendChild(providerBadge);
+    }
+
+    // Show file attachments if any
+    if (message.attachments && message.attachments.length > 0) {
+      const attachmentsEl = document.createElement('div');
+      attachmentsEl.className = 'message-attachments';
+
+      message.attachments.forEach(attachment => {
+        const attachmentChip = document.createElement('div');
+        attachmentChip.className = 'attachment-chip';
+        const icon = attachment.type === 'pdf' ? '📄' : '📊';
+        attachmentChip.textContent = `${icon} ${attachment.name}`;
+        attachmentsEl.appendChild(attachmentChip);
+      });
+
+      header.appendChild(attachmentsEl);
     }
 
     const text = document.createElement('div');

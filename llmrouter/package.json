@@ -10,8 +10,10 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "dompurify": "^3.0.8",
     "marked": "^11.1.1",
-    "dompurify": "^3.0.8"
+    "pdfjs-dist": "^5.4.624",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.5",

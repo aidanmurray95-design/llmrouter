@@ -1,10 +1,12 @@
 // Shared types for LLM integrations
+import type { FileAttachment } from '../types/fileTypes';
 
 export type LLMProvider = 'openai' | 'claude';
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  attachments?: FileAttachment[];
 }
 
 export interface ChatRequest {

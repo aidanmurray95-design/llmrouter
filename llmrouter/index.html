@@ -48,17 +48,31 @@
                 </div>
               </div>
             </div>
-            <form id="chat-form" class="chat-input-container">
-              <textarea
-                id="chat-input"
-                class="chat-input"
-                placeholder="Type your message..."
-                rows="1"
-              ></textarea>
-              <button type="submit" class="btn-send" aria-label="Send">
-                <span class="send-icon">➤</span>
-              </button>
-            </form>
+            <div class="chat-input-wrapper">
+              <!-- File preview area -->
+              <div id="chat-file-preview" class="file-preview hidden"></div>
+
+              <!-- Input form -->
+              <form id="chat-form" class="chat-input-container">
+                <button type="button" class="btn-attach" id="chat-file-btn" title="Attach file">
+                  📎
+                </button>
+                <textarea
+                  id="chat-input"
+                  class="chat-input"
+                  placeholder="Type your message..."
+                  rows="1"
+                ></textarea>
+                <button type="submit" class="btn-send" aria-label="Send">
+                  <span class="send-icon">➤</span>
+                </button>
+              </form>
+
+              <!-- Hidden file input -->
+              <input type="file" id="chat-file-input" hidden
+                     accept=".pdf,.xlsx,.xls,.csv"
+                     multiple>
+            </div>
           </div>
         </div>
 
