@@ -145,7 +145,7 @@ export class FlowsUI {
     }
   }
 
-  private showProgress(totalSteps: number): void {
+  private showProgress(_totalSteps: number): void {
     this.flowProgressContainer.classList.remove('hidden');
     this.progressFill.style.width = '0%';
     this.flowStepsStatus.innerHTML = '';

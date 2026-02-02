@@ -75,7 +75,7 @@ class App {
     this.updateLLMClients(config);
   }
 
-  private updateLLMClients(config: APIConfig): void {
+  private updateLLMClients(_config: APIConfig): void {
     const clientInfo = this.configUI.createLLMClient();
 
     if (clientInfo) {

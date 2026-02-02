@@ -1,4 +1,4 @@
-import type { ChatRequest, ChatResponse, LLMClient, StreamCallback, Message } from './types';
+import type { ChatRequest, ChatResponse, LLMClient, StreamCallback } from './types';
 import { LLMError } from './types';
 
 export class OpenAIClient implements LLMClient {
