@@ -132,7 +132,7 @@ export class ConfigUI {
 
   private getDefaultConfig(): APIConfig {
     return {
-      defaultProvider: 'openai',
+      defaultProvider: 'claude',
       openaiModel: 'gpt-4',
     };
   }
