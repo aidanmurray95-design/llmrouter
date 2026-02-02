@@ -16,13 +16,13 @@ const MODEL_COMMANDS: Record<string, ModelOverride> = {
   // Claude models
   '@claude': {
     provider: 'claude',
-    model: 'claude-3-5-sonnet-20240620',
-    displayName: 'Claude 3.5 Sonnet'
+    model: 'claude-sonnet-4-20250514',
+    displayName: 'Claude Sonnet 4'
   },
   '@sonnet': {
     provider: 'claude',
-    model: 'claude-3-5-sonnet-20240620',
-    displayName: 'Claude 3.5 Sonnet'
+    model: 'claude-sonnet-4-20250514',
+    displayName: 'Claude Sonnet 4'
   },
   '@opus': {
     provider: 'claude',
