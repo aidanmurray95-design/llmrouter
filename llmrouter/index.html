@@ -38,6 +38,23 @@
         <!-- Chat Tab -->
         <div id="chat-tab" class="tab-content active">
           <div class="chat-container">
+            <div class="chat-header">
+              <div class="chat-actions">
+                <div class="export-dropdown">
+                  <button id="export-btn" class="btn-export" title="Export chat">
+                    📥 Export
+                  </button>
+                  <div id="export-menu" class="export-menu hidden">
+                    <button id="export-excel-btn" class="export-option">
+                      📊 Export to Excel
+                    </button>
+                    <button id="export-pdf-btn" class="export-option">
+                      📄 Export to PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div id="chat-messages" class="chat-messages">
               <div class="welcome-message">
                 <h2>Welcome to Multi-LLM Chatbot! 👋</h2>

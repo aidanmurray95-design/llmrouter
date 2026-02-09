@@ -12,6 +12,7 @@ import { parsePDF } from '../parsers/pdfParser';
 import { parseExcel } from '../parsers/excelParser';
 import { parseModelCommand, getModelDisplayName } from '../utils/modelCommands';
 import type { ConfigUI } from './config';
+import { exportToExcel, exportToPDF, type ExportMessage } from '../utils/exportChat';
 
 interface ChatMessage extends Message {
   id: string;
@@ -32,6 +33,10 @@ export class ChatUI {
   private fileAttachments: FileAttachment[] = [];
   private isProcessingFiles: boolean = false;
   private configUI: ConfigUI;
+  private exportButton: HTMLButtonElement | null = null;
+  private exportMenu: HTMLElement | null = null;
+  private exportExcelButton: HTMLButtonElement | null = null;
+  private exportPdfButton: HTMLButtonElement | null = null;
 
   constructor(configUI: ConfigUI) {
     this.configUI = configUI;
@@ -41,6 +46,7 @@ export class ChatUI {
 
     this.setupEventListeners();
     this.setupFileUpload();
+    this.setupExportButtons();
   }
 
   private setupEventListeners(): void {
@@ -63,6 +69,14 @@ export class ChatUI {
         this.handleSendMessage();
       }
     });
+
+    // Close export menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (this.exportMenu && !this.exportMenu.contains(e.target as Node) &&
+          this.exportButton && !this.exportButton.contains(e.target as Node)) {
+        this.exportMenu.classList.add('hidden');
+      }
+    });
   }
 
   private setupFileUpload(): void {
@@ -81,6 +95,80 @@ export class ChatUI {
           this.handleFileSelect(Array.from(files));
         }
       });
+    }
+  }
+
+  private setupExportButtons(): void {
+    this.exportButton = document.getElementById('export-btn') as HTMLButtonElement;
+    this.exportMenu = document.getElementById('export-menu');
+    this.exportExcelButton = document.getElementById('export-excel-btn') as HTMLButtonElement;
+    this.exportPdfButton = document.getElementById('export-pdf-btn') as HTMLButtonElement;
+
+    if (this.exportButton && this.exportMenu) {
+      this.exportButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.exportMenu?.classList.toggle('hidden');
+      });
+    }
+
+    if (this.exportExcelButton) {
+      this.exportExcelButton.addEventListener('click', () => {
+        this.handleExportExcel();
+        this.exportMenu?.classList.add('hidden');
+      });
+    }
+
+    if (this.exportPdfButton) {
+      this.exportPdfButton.addEventListener('click', () => {
+        this.handleExportPDF();
+        this.exportMenu?.classList.add('hidden');
+      });
+    }
+  }
+
+  private handleExportExcel(): void {
+    if (this.messages.length === 0) {
+      this.showError('No messages to export');
+      return;
+    }
+
+    try {
+      const exportMessages: ExportMessage[] = this.messages.map(msg => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        provider: msg.provider,
+        attachments: msg.attachments?.map(a => ({ name: a.name, type: a.type }))
+      }));
+
+      exportToExcel(exportMessages);
+    } catch (error) {
+      console.error('Export to Excel failed:', error);
+      this.showError('Failed to export to Excel');
+    }
+  }
+
+  private handleExportPDF(): void {
+    if (this.messages.length === 0) {
+      this.showError('No messages to export');
+      return;
+    }
+
+    try {
+      const exportMessages: ExportMessage[] = this.messages.map(msg => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        provider: msg.provider,
+        attachments: msg.attachments?.map(a => ({ name: a.name, type: a.type }))
+      }));
+
+      exportToPDF(exportMessages);
+    } catch (error) {
+      console.error('Export to PDF failed:', error);
+      this.showError('Failed to export to PDF');
     }
   }
 

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "dompurify": "^3.0.8",
+    "jspdf": "^4.1.0",
     "marked": "^11.1.1",
     "pdfjs-dist": "^5.4.624",
     "xlsx": "^0.18.5"
